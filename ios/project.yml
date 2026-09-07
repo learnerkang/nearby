@@ -4,7 +4,7 @@
 # install XcodeGen.
 name: Nearby
 options:
-  bundleIdPrefix: com.example
+  bundleIdPrefix: com.learnerkang
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -27,8 +27,12 @@ targets:
     platform: iOS
     sources:
       - path: Nearby
-    info:
-      path: Nearby/Info.plist
+    # Deliberately NO `info:` block. That key makes XcodeGen *generate* the
+    # plist at that path, silently overwriting the hand-written one - which
+    # cost us the location usage strings, UIBackgroundModes and
+    # BGTaskSchedulerPermittedIdentifiers on the first `xcodegen generate`.
+    # The file is checked in and pointed at by INFOPLIST_FILE below; leave it
+    # that way. Nothing here fails at compile time if this regresses.
     settings:
       base:
         # ---------------------------------------------------------------
@@ -36,7 +40,7 @@ targets:
         # globally unique and must match the App ID in your Apple Developer
         # account; DEVELOPMENT_TEAM is your 10-character Team ID.
         # ---------------------------------------------------------------
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.nearby
+        PRODUCT_BUNDLE_IDENTIFIER: com.learnerkang.nearby
         DEVELOPMENT_TEAM: ""
         INFOPLIST_FILE: Nearby/Info.plist
         CODE_SIGN_STYLE: Automatic

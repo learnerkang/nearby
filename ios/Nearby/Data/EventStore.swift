@@ -5,7 +5,7 @@ import SwiftUI
 
 @MainActor
 final class EventStore: ObservableObject {
-    private let log = Logger(subsystem: "com.example.nearby", category: "store")
+    private let log = Logger(subsystem: "com.learnerkang.nearby", category: "store")
     private let client: SnapshotClient
 
     @Published private(set) var events: [Event] = []

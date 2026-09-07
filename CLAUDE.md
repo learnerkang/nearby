@@ -6,24 +6,28 @@ Built for a small friend group. Read `README.md` for the full rationale.
 
 ## Current state — read this first
 
-- **The Swift has never been compiled.** It was authored on Windows, where no
-  Swift toolchain or iOS SDK exists. Structure was validated (balanced
-  delimiters, all types resolve, plists parse, background-task IDs match) but
-  that is not a compiler. Expect shallow compile errors on the first Xcode
-  build: imports, optionals, SwiftUI API drift. Fixing these is the immediate
-  next task.
+- **The Swift compiles** as of 2026-09-07, against Xcode 26.6 / iOS 26.5 SDK:
+  clean build, no warnings. It had been authored on Windows and never seen a
+  compiler; exactly one real error surfaced, plus one latent Swift 6 problem.
+  Both are described under "Decisions" below.
+- **It has still never been run** on a simulator or a device. Compiling is not
+  launching, and the interesting failures left are runtime ones.
 - **The Python pipeline is verified working** against the live sites: 70 real
   Reno events, 19 unit tests passing.
-- **Not yet on GitHub, not yet on the App Store.** See `docs/SETUP.md` then
-  `docs/APP_STORE.md`.
+- **The pipeline is live in production.** GitHub Actions cron is running and
+  `https://learnerkang.github.io/nearby/manifest.json` serves a current
+  snapshot. All 69 events in it decode through the Swift `Event`/`Snapshot`
+  types, verified by compiling those files natively on macOS.
+- **Not yet on the App Store.** See `docs/APP_STORE.md`.
 
 ## Placeholders that must be replaced before anything works
 
-| File | Value |
-|---|---|
-| `ios/Nearby/Support/AppConfig.swift` | `snapshotBaseURL` → your GitHub Pages URL |
-| `ios/project.yml` | `PRODUCT_BUNDLE_IDENTIFIER`, `DEVELOPMENT_TEAM` |
-| `ios/Nearby/Support/AppConfig.swift` + `ios/Nearby/Info.plist` | `backgroundRefreshTaskID` must match `BGTaskSchedulerPermittedIdentifiers` **in both files** or the scheduler silently refuses to run |
+| File | Value | Status |
+|---|---|---|
+| `ios/Nearby/Support/AppConfig.swift` | `snapshotBaseURL` → your GitHub Pages URL | done |
+| `ios/project.yml` | `PRODUCT_BUNDLE_IDENTIFIER` → `com.learnerkang.nearby` | done |
+| `ios/project.yml` | `DEVELOPMENT_TEAM` → 10-char Team ID | **still empty.** Only needed to install on a device or submit; the Simulator builds without it |
+| `ios/Nearby/Support/AppConfig.swift` + `ios/Nearby/Info.plist` | `backgroundRefreshTaskID` must match `BGTaskSchedulerPermittedIdentifiers` **in both files** or the scheduler silently refuses to run | done, both `com.learnerkang.nearby.refresh` |
 
 ## Architecture, and why
 
@@ -63,6 +67,16 @@ brew install xcodegen && cd ios && xcodegen generate && open Nearby.xcodeproj
   scrape them, because Ticketmaster and SeatGeek carry their inventory legally.
   Do not add scrapers for those sites, and do not add ticketing-site scrapers
   before App Review.
+- **`AppEnvironment` is `@MainActor`.** Its original comment said the opposite,
+  reasoning that it is built from `App.init`, which is nonisolated. That is no
+  longer true — SwiftUI's `App` is main-actor-isolated, so the singleton is
+  already constructed on the main actor, and `EventStore` (also `@MainActor`)
+  cannot be built anywhere else. `LocationManager` stays nonisolated on
+  purpose; region callbacks really do arrive off the main actor.
+- **`BackgroundRefresh.handle` uses `Task { @MainActor in }`.** iOS invokes the
+  BGTask handler from a nonisolated context, so reaching `AppEnvironment.shared`
+  without the hop is a cross-actor access — a warning in Swift 5 mode and a
+  hard error under Swift 6. Do not drop the annotation.
 - **The 20-region iOS cap shapes `GeofenceCoordinator`.** One region per
   *venue* (not per event), 19 nearest venues, plus a 20th "recompute" bubble
   around the user that triggers re-selection when they move. Regions are
@@ -92,6 +106,18 @@ Otherwise copy `sources/cargo_reno.py` and register the type in `nearby/cli.py`.
 
 ## Gotchas
 
+- **Never add an `info:` block to the `Nearby` target in `project.yml`.** That
+  key does not point XcodeGen at a plist, it makes XcodeGen *generate* one at
+  that path, overwriting the hand-written file. It silently destroyed both
+  `NSLocation*UsageDescription` strings, `UIBackgroundModes`,
+  `BGTaskSchedulerPermittedIdentifiers` and `ITSAppUsesNonExemptEncryption` on
+  the first `xcodegen generate` — **and the build still succeeded**, because
+  none of it is checked at compile time. The symptom is a launch-time crash on
+  the first location request. `INFOPLIST_FILE` in `settings` is what wires the
+  checked-in plist up. After any `xcodegen generate`, `git diff
+  ios/Nearby/Info.plist` should be empty.
+- `ios/Nearby.xcodeproj` is generated and gitignored. Edit `project.yml`; a
+  hand edit to the pbxproj is lost on the next generate.
 - GitHub disables scheduled workflows on public repos after **60 days of
   repository inactivity**. Any commit resets it; `workflow_dispatch` is the
   manual escape hatch.

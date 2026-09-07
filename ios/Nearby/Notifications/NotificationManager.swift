@@ -8,7 +8,7 @@ import UserNotifications
 final class NotificationManager: NSObject, ObservableObject {
     static let shared = NotificationManager()
 
-    private let log = Logger(subsystem: "com.example.nearby", category: "notifications")
+    private let log = Logger(subsystem: "com.learnerkang.nearby", category: "notifications")
     private let center = UNUserNotificationCenter.current()
     private let defaults = UserDefaults.standard
 

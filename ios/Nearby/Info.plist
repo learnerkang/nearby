@@ -60,7 +60,7 @@
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.example.nearby.refresh</string>
+		<string>com.learnerkang.nearby.refresh</string>
 	</array>
 
 	<!--

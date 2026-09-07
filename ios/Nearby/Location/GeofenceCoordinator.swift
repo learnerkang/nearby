@@ -15,7 +15,7 @@ import OSLog
 ///  - the 20th slot is a large "recompute" bubble around the user. Leaving it
 ///    means the nearest-19 list is probably stale, which triggers a reselect.
 final class GeofenceCoordinator {
-    private let log = Logger(subsystem: "com.example.nearby", category: "geofence")
+    private let log = Logger(subsystem: "com.learnerkang.nearby", category: "geofence")
     private let locationManager: LocationManager
     private let notifications: NotificationManager
     private let settings: UserSettings

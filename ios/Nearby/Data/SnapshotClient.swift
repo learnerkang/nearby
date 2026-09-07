@@ -26,7 +26,7 @@ enum SnapshotError: LocalizedError {
 actor SnapshotClient {
     static let shared = SnapshotClient()
 
-    private let log = Logger(subsystem: "com.example.nearby", category: "snapshot")
+    private let log = Logger(subsystem: "com.learnerkang.nearby", category: "snapshot")
     private let session: URLSession
 
     init(session: URLSession? = nil) {

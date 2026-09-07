@@ -9,7 +9,7 @@ import OSLog
 /// rebuilt from whatever snapshot is on disk, and an event list a few hours
 /// stale is still useful. Foreground launches refresh normally regardless.
 enum BackgroundRefresh {
-    private static let log = Logger(subsystem: "com.example.nearby", category: "background")
+    private static let log = Logger(subsystem: "com.learnerkang.nearby", category: "background")
 
     /// Must run before the app finishes launching, so it is called from
     /// `NearbyApp.init`.
@@ -45,7 +45,10 @@ enum BackgroundRefresh {
         // another attempt later.
         schedule()
 
-        let work = Task {
+        // Hops to the main actor explicitly: AppEnvironment and EventStore are
+        // both main-actor-isolated, and this handler is called by iOS from a
+        // nonisolated context during a background relaunch.
+        let work = Task { @MainActor in
             let env = AppEnvironment.shared
             await env.store.refresh()
             if let location = env.locationManager.currentLocation {

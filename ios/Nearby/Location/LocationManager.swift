@@ -9,7 +9,7 @@ import OSLog
 /// need to run then. CLLocationManager delivers callbacks on the queue it was
 /// created on, which is main here, so the `@Published` writes are safe.
 final class LocationManager: NSObject, ObservableObject {
-    private let log = Logger(subsystem: "com.example.nearby", category: "location")
+    private let log = Logger(subsystem: "com.learnerkang.nearby", category: "location")
     private let manager = CLLocationManager()
 
     @Published private(set) var authorizationStatus: CLAuthorizationStatus

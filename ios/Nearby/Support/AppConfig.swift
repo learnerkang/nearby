@@ -6,7 +6,7 @@ enum AppConfig {
     // CHANGE THIS after you enable GitHub Pages (docs/SETUP.md step 4).
     // It is the only line that ties the app to your data.
     // ------------------------------------------------------------------
-    static let snapshotBaseURL = URL(string: "https://YOUR_GITHUB_USERNAME.github.io/nearby")!
+    static let snapshotBaseURL = URL(string: "https://learnerkang.github.io/nearby")!
 
     static var manifestURL: URL { snapshotBaseURL.appendingPathComponent("manifest.json") }
     /// Plain JSON, not the .gz: GitHub Pages applies gzip transfer encoding
@@ -14,7 +14,7 @@ enum AppConfig {
     /// download without hand-rolling gunzip.
     static var eventsURL: URL { snapshotBaseURL.appendingPathComponent("events.json") }
 
-    static let backgroundRefreshTaskID = "com.example.nearby.refresh"
+    static let backgroundRefreshTaskID = "com.learnerkang.nearby.refresh"
 
     /// Fallback map centre before the first location fix: downtown Reno.
     static let fallbackCenter = CLLocationCoordinate2D(latitude: 39.5296, longitude: -119.8138)

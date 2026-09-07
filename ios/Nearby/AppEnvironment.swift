@@ -11,13 +11,18 @@ import SwiftUI
 /// talk to the *same* LocationManager. Two instances would each register their
 /// own regions and quietly fight over the 20-region budget.
 ///
-/// Not `@MainActor`-isolated, because it is constructed from `App.init`, which
-/// is nonisolated. The pieces that need the main actor (`EventStore`) are
-/// isolated themselves and awaited here.
+/// `@MainActor`-isolated. It is reached first from `NearbyApp`'s `@StateObject`
+/// initialiser, and SwiftUI's `App` is itself main-actor-isolated, so this is
+/// where construction already happens; `EventStore` is `@MainActor` too and
+/// cannot be built anywhere else. `LocationManager` stays deliberately
+/// nonisolated - see its own note - because region callbacks arrive off the
+/// main actor during a background relaunch. Background callers reach this type
+/// through an explicit main-actor hop.
+@MainActor
 final class AppEnvironment: ObservableObject {
     static let shared = AppEnvironment()
 
-    private let log = Logger(subsystem: "com.example.nearby", category: "environment")
+    private let log = Logger(subsystem: "com.learnerkang.nearby", category: "environment")
 
     let store: EventStore
     let settings: UserSettings
@@ -64,10 +69,10 @@ final class AppEnvironment: ObservableObject {
     private func handleArrival(_ venueKey: String) async {
         // A background relaunch has no warm state, so make sure the cached
         // snapshot is loaded before trying to resolve the venue.
-        var events = await store.events
+        var events = store.events
         if events.isEmpty {
             await store.loadCache()
-            events = await store.events
+            events = store.events
         }
         geofences.handleArrival(atVenueKey: venueKey, in: events)
     }
@@ -76,10 +81,10 @@ final class AppEnvironment: ObservableObject {
         guard settings.arrivalAlertsEnabled, locationManager.hasAlwaysAuthorization else {
             return
         }
-        var events = await store.events
+        var events = store.events
         if events.isEmpty {
             await store.loadCache()
-            events = await store.events
+            events = store.events
         }
         geofences.updateRegions(for: events, location: location)
     }
