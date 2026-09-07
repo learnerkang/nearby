@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.cache/
+site/
+.DS_Store
+
+# Xcode
+ios/build/
+ios/DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Never commit these
+.env
+*.p8
+*.p12
+*.mobileprovision

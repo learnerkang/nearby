@@ -1,0 +1,6 @@
+requests>=2.32
+beautifulsoup4>=4.12
+lxml>=5.2
+PyYAML>=6.0
+# Windows and slim Linux images ship no system zoneinfo database.
+tzdata>=2024.1

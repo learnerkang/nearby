@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Nearby</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<!--
+	  Permission strings. App Review reads these literally and rejects vague
+	  ones, so each states the concrete user benefit. The "Always" string also
+	  states that location never leaves the device, which is true of this
+	  architecture: matching happens on-device against a downloaded snapshot,
+	  and nothing is uploaded anywhere.
+	-->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Nearby uses your location to show events happening around you on the map and to sort them by distance.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Nearby can let you know when you are near a venue with an event starting soon, even when the app is closed. Your location is only ever used on this device and is never uploaded or shared.</string>
+
+	<!--
+	  location: region monitoring wakes the app to fire an arrival alert.
+	  fetch/processing: refresh the event snapshot on a schedule.
+	-->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.example.nearby.refresh</string>
+	</array>
+
+	<!--
+	  The snapshot is served over HTTPS from GitHub Pages, so no ATS
+	  exceptions are needed. Do not add any.
+	-->
+
+	<!--
+	  The app uses only standard HTTPS, which is exempt from US export
+	  regulations. Declaring it here stops App Store Connect asking the
+	  encryption question on every single upload.
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+</dict>
+</plist>

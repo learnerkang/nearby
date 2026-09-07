@@ -1,0 +1,16 @@
+# This repo is authored on Windows but built on macOS (Xcode) and Linux
+# (GitHub Actions). Normalise everything to LF in the repository so the
+# toolchains that matter never see CRLF, regardless of each machine's
+# core.autocrlf setting.
+* text=auto eol=lf
+
+# Binary: never touch these.
+*.png binary
+*.jpg binary
+*.pdf binary
+*.p8 binary
+*.p12 binary
+
+# Keep GitHub's language stats honest about what this project is.
+*.plist linguist-language=XML
+*.xcprivacy linguist-language=XML

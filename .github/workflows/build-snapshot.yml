@@ -1,0 +1,74 @@
+name: Build event snapshot
+
+# Every three hours. GitHub disables scheduled runs on repos with no activity
+# for 60 days, so workflow_dispatch is the escape hatch.
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "pipeline/**"
+      - ".github/workflows/build-snapshot.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two snapshot builds publish at once.
+concurrency:
+  group: snapshot
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Restore HTTP cache
+        uses: actions/cache@v4
+        with:
+          path: .httpcache
+          key: httpcache-${{ github.run_id }}
+          restore-keys: httpcache-
+
+      - name: Run test suite
+        run: pip install pytest && python -m pytest tests -q
+        working-directory: pipeline
+
+      - name: Build snapshot
+        env:
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          SEATGEEK_CLIENT_ID: ${{ secrets.SEATGEEK_CLIENT_ID }}
+          NEARBY_CACHE_DIR: ${{ github.workspace }}/.httpcache
+        run: python -m nearby.cli --config config.yaml --out ../site
+        working-directory: pipeline
+
+      - name: Verify snapshot
+        run: python pipeline/verify_snapshot.py site/events.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

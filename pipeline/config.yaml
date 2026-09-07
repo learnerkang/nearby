@@ -1,0 +1,52 @@
+# Reno / Tahoe region.
+#
+# Why 100 miles works here but would not in New York: Reno is a low-density
+# market with a hard geographic edge. A 100-mile circle picks up Sparks,
+# Carson City, Virginia City, the whole Tahoe basin (Crystal Bay, Incline,
+# Stateline) and Truckee - all places you would plausibly drive to on a
+# Friday. It stops just short of Sacramento (~132 mi), which is the right
+# call: nobody gets a push notification for a show they cannot reach.
+region:
+  name: "Reno-Tahoe"
+  center: { lat: 39.5296, lon: -119.8138 }   # downtown Reno
+  radius_miles: 100
+  horizon_days: 90                            # how far ahead to publish
+  timezone: "America/Los_Angeles"
+
+# Secrets come from the environment, never this file.
+#   TICKETMASTER_API_KEY  - https://developer.ticketmaster.com (free)
+#   SEATGEEK_CLIENT_ID    - https://platform.seatgeek.com (free)
+# A source with a missing key is skipped with a warning, not an error, so the
+# pipeline still produces a snapshot on a fresh clone.
+sources:
+  - id: ticketmaster
+    type: ticketmaster
+    enabled: true
+    api_key_env: TICKETMASTER_API_KEY
+
+  - id: seatgeek
+    type: seatgeek
+    enabled: true
+    api_key_env: SEATGEEK_CLIENT_ID
+
+  - id: holland_project
+    type: tribe_events
+    enabled: true
+    base_url: "https://hollandreno.org"
+    default_category: music
+    fallback_venue:
+      name: "The Holland Project"
+      lat: 39.509635
+      lon: -119.80367
+      address: "140 Vesta St"
+      city: "Reno"
+      state: "NV"
+
+  - id: cargo_reno
+    type: cargo_reno
+    enabled: true
+    max_detail_fetches: 60
+    horizon_days: 120
+
+output:
+  dir: "../site"
