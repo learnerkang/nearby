@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from html import unescape
 from typing import Any, Iterator, Optional
 
-from ..models import Event, Venue
+from ..models import Event, Venue, normalize_title
 from .base import Source, classify, http_get, parse_cost
 
 log = logging.getLogger(__name__)
@@ -20,6 +20,13 @@ log = logging.getLogger(__name__)
 _TAG = re.compile(r"<[^>]+>")
 PER_PAGE = 50
 MAX_PAGES = 20
+
+
+def _venue_key(name: str) -> str:
+    """Flatten a venue name for comparison, ignoring a leading article, so
+    that "Holland Project" and "The Holland Project" are the same place."""
+    n = normalize_title(name)
+    return n[4:] if n.startswith("the ") else n
 
 
 def _text(html: Optional[str], limit: int = 600) -> Optional[str]:
@@ -56,13 +63,43 @@ class TribeEventsSource(Source):
         self.fallback_venue = fallback_venue or {}
         self.default_category = default_category
 
+    def _at_fallback_venue(self, v: dict[str, Any]) -> bool:
+        """Whether an event with no coordinates is really at the site's own venue.
+
+        Two ways to be confident: the feed named no venue at all - the ordinary
+        case for a single-venue site - or it named one that matches the
+        configured fallback. Anything else is somewhere else.
+        """
+        fb = self.fallback_venue
+        city = (v.get("city") or "").strip()
+        fb_city = (fb.get("city") or "").strip()
+        if city and fb_city and city.casefold() != fb_city.casefold():
+            return False
+        name = (v.get("venue") or "").strip()
+        if not name:
+            return True
+        return _venue_key(name) == _venue_key(fb.get("name") or self.name)
+
     def _venue(self, raw: dict[str, Any]) -> Optional[Venue]:
         v = raw.get("venue") or {}
         lat, lon = v.get("geo_lat"), v.get("geo_lng")
         if lat is None or lon is None:
-            # Single-venue sites often omit geo on individual events.
+            # Single-venue sites often omit geo on individual events, so the
+            # site's own coordinates are a reasonable stand-in - but only when
+            # the event is actually held there. Holland Project lists off-site
+            # shows (Brewery Arts Center is in Carson City, ~30 miles south),
+            # and stamping the fallback coordinates on one of those puts the
+            # pin, and the geofence, in the wrong city: the app would then
+            # announce a Carson City show to somebody standing in Reno.
+            # Dropping the event is the lesser harm.
             fb = self.fallback_venue
             if not fb.get("lat"):
+                return None
+            if not self._at_fallback_venue(v):
+                log.debug(
+                    "%s: skipping %s at %s - no coordinates and not the fallback venue",
+                    self.name, raw.get("title"), v.get("venue"),
+                )
                 return None
             return Venue(
                 name=v.get("venue") or fb.get("name", self.name),
