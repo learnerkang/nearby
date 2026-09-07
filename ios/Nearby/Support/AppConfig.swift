@@ -27,6 +27,16 @@ enum AppConfig {
     /// watching venues that are now the wrong ones.
     static let maxVenueRegions = 19
     static let venueRegionRadius: CLLocationDistance = 350      // metres
+
+    /// Venues closer together than this are treated as one place and given a
+    /// single region. Sources list the same complex at slightly different
+    /// coordinates - the Eldorado twice, 48 m apart; "Alpine" and "The Alpine"
+    /// 41 m apart - and rounding alone does not collapse those. Downtown Reno
+    /// wanted 22 slots for 11 buildings, over the 19 available, so real venues
+    /// were being dropped. Kept well under `venueRegionRadius`: someone
+    /// standing at a suppressed venue is comfortably inside the region that
+    /// replaced it.
+    static let venueClusterRadius: CLLocationDistance = 150
     static let recomputeRegionRadius: CLLocationDistance = 5_000
     static let recomputeRegionID = "nearby.recompute"
 

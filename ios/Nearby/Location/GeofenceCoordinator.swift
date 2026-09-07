@@ -35,11 +35,10 @@ final class GeofenceCoordinator {
 
     // MARK: - Venue identity
 
-    /// Regions are keyed by rounded coordinates so that the same venue spelled
-    /// differently by two sources still maps to one slot. Five decimal places
-    /// is about one metre.
+    /// See `VenueSelection` for the identity scheme and why a region stands for
+    /// every venue within `AppConfig.venueClusterRadius` of it.
     static func venueKey(lat: Double, lon: Double) -> String {
-        String(format: "venue.%.5f,%.5f", lat, lon)
+        VenueSelection.venueKey(lat: lat, lon: lon)
     }
 
     static func venueKey(for event: Event) -> String {
@@ -65,10 +64,16 @@ final class GeofenceCoordinator {
             bestByVenue[key] = (event, distance)
         }
 
-        return bestByVenue
+        let nearestFirst = bestByVenue
             .sorted { $0.value.distance < $1.value.distance }
-            .prefix(AppConfig.maxVenueRegions)
-            .map { ($0.key, $0.value.event.coordinate) }
+            .map { (key: $0.key, coordinate: $0.value.event.coordinate) }
+
+        return VenueSelection.suppressingNearDuplicates(
+            nearestFirst,
+            limit: AppConfig.maxVenueRegions,
+            clusterRadius: AppConfig.venueClusterRadius,
+            coordinate: \.coordinate
+        )
     }
 
     /// Reconcile the monitored set with the desired set.
@@ -142,7 +147,11 @@ final class GeofenceCoordinator {
     @discardableResult
     func handleArrival(atVenueKey key: String, in events: [Event], now: Date = .now) -> Event? {
         let candidates = events
-            .filter { Self.venueKey(for: $0) == key }
+            .filter {
+                VenueSelection.event(at: $0.coordinate,
+                                     matchesKey: key,
+                                     clusterRadius: AppConfig.venueClusterRadius)
+            }
             .filter { $0.isActive(within: settings.lookahead, asOf: now) }
             .sorted { $0.start < $1.start }
 
